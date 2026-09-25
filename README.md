@@ -1,16 +1,11 @@
-## Hi there 👋
+# Conecta Serviços
 
-<!--
-**conectaservicos/conectaservicos** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+1. Execute `supabase-schema.sql` no SQL Editor.
+2. Preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `index.html`.
+3. Crie o primeiro usuário e execute:
+```sql
+update public.profiles set role='admin',status='active' where email='SEU_EMAIL_ADMIN@EXEMPLO.COM';
+```
+4. Publique os arquivos no GitHub Pages.
+5. Configure Site URL e Redirect URLs no Supabase Auth.
+6. Instale pelo Chrome/Edge usando “Instalar aplicativo”.
