@@ -75,7 +75,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_x9PtgKKvXfKYGPIhaMJw0g_Yr73KElr";
 const ADMIN_WHATSAPP = "5579999055301";
 const PROFESSIONAL_FEE = 4.99;
 const SUBSCRIPTION_DAYS = 30;
-const sbReady = !SUPABASE_URL.startsWith("COLE_AQUI") && !SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
+const sbReady = !SUPABASE_URL.startsWith('https://qrzwnkuypwhzbreynzij.supabase.co") && !SUPABASE_ANON_KEY.startsWith("sb_publishable_x9PtgKKvXfKYGPIhaMJw0g_Yr73KElr");
 const db = sbReady ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 let currentUser = null, currentProfile = null, selectedService = null;
 
