@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffc21c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
   <title>Conecta Serviços V2</title>
   <meta name="description" content="Encontre profissionais verificados e solicite orçamentos." />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -545,6 +550,11 @@ async function activateProfessional(id){
  if(error)return toast(error.message);toast("Profissional ativado até "+new Date(data).toLocaleDateString("pt-BR"));loadAdmin();
 }
 getSession();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(console.error));
+}
 </script>
 </body>
 </html>
