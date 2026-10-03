@@ -72,6 +72,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_x9PtgKKvXfKYGPIhaMJw0g_Yr73KElr";
 const ADMIN_WHATSAPP = "5579999055301";
 const PROFESSIONAL_FEE = 4.99;
 const STORE_FEE = 4.99;
+const PROFESSIONAL_PHOTOS_BUCKET = "professional-photos";
 const SUBSCRIPTION_DAYS = 30;
 const ADMIN_BAN_PASSWORD = "26";
 const sbReady = !SUPABASE_URL.startsWith("COLE_AQUI") && !SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
@@ -181,12 +182,20 @@ async function register(){
  const storeName=$("store_name")?.value.trim()||"",storeCategory=$("store_category")?.value.trim()||"",storeAddress=$("store_address")?.value.trim()||"",storeDescription=$("store_description")?.value.trim()||"";
  if(!name||!email||!phone||!city||password.length<6)return toast("Preencha todos os campos. A senha precisa ter 6 caracteres.");
  if(isStore && (!storeName||!storeCategory||!storeAddress))return toast("Preencha nome, categoria e endereço da loja.");
- const {data,error}=await db.auth.signUp({email,password});
+ const {data,error}=await db.auth.signUp({
+   email,
+   password,
+   options:{
+     data:{
+       full_name:name,
+       phone:phone,
+       city:city,
+       role:role
+     }
+   }
+ });
  if(error)return toast(error.message);
  if(data.user){
-   const profileRole=role;
-   const {error:e}=await db.from("profiles").insert({id:data.user.id,full_name:name,email,phone,city,role:profileRole,status:(role==='professional'||role==='store')?'pending':'active'});
-   if(e)return toast(e.message);
    if(isStore){
     const {error:storeError}=await db.from("commercial_stores").insert({owner_id:data.user.id,name:storeName,email,phone,city,address:storeAddress,category:storeCategory,description:storeDescription,status:'pending'});
     if(storeError)return toast(storeError.message);
@@ -347,8 +356,9 @@ function renderProfessional(){
  `<div class="card"><h2>Ative seu acesso profissional</h2><div class="notice">Taxa: <b>${money(PROFESSIONAL_FEE)}</b>. Fale com o ADM, pague via Pix e envie o comprovante. O ADM libera o acesso por 30 dias após confirmar o pagamento.</div><a class="btn btn-primary" style="display:inline-block;margin-top:16px;text-decoration:none" href="${wa('Olá, ADM! Sou '+currentProfile.full_name+'. Quero pagar a taxa de ativação de '+money(PROFESSIONAL_FEE)+' e liberar meu acesso por 30 dias.')}" target="_blank">Falar com ADM no WhatsApp</a></div>`}
  <div class="grid grid-2">
   <div class="card"><h3>Minha conta</h3><p class="muted">${esc(currentProfile.email)}</p><p class="muted">${esc(currentProfile.phone||'')}</p><p class="muted">${esc(currentProfile.city||'')}</p></div>
-  <div class="card"><h3>Meus serviços</h3><p class="muted">${esc(currentProfile.service_category||'Ainda não informado')}</p><button class="btn btn-outline btn-small" onclick="editProfessional()">Editar dados</button></div>
+  <div class="card"><h3>Minha foto</h3>${currentProfile.photo_url?`<img src="${esc(currentProfile.photo_url)}" alt="Minha foto" style="width:110px;height:110px;object-fit:cover;border-radius:22px;border:2px solid var(--gold);display:block;margin-bottom:12px" onerror="this.style.display='none'">`:''}<input id="professional-photo" type="file" accept="image/*" class="input"><p class="muted" style="font-size:12px">Escolha uma foto sua. Ela será exibida para os clientes no seu perfil.</p><button class="btn btn-primary btn-small" onclick="uploadProfessionalPhoto()">Salvar foto</button></div>
  </div>
+ <div class="card"><h3>Meus serviços</h3><p class="muted">${esc(currentProfile.service_category||'Ainda não informado')}</p><button class="btn btn-outline btn-small" onclick="editProfessional()">Editar dados</button></div>
  <div class="section-title"><h2>Solicitações recebidas</h2></div><div id="pro-requests" class="grid"><div class="empty">Carregando...</div></div>
  <div class="bottom-nav"><button class="active">⌂<br>Início</button><button onclick="loadProfessionalRequests()">▤<br>Solicitações</button><button onclick="editProfessional()">⚙<br>Perfil</button></div>`;
  loadProfessionalRequests();
@@ -386,6 +396,25 @@ async function loadProfessionalRating(professionalId){
  const rows=data||[],avg=rows.length?rows.reduce((sum,r)=>sum+Number(r.rating||0),0)/rows.length:0;
  const html=rows.length?rows.map(r=>`<div class="review"><div>${stars(r.rating)} <b>${Number(r.rating).toFixed(0)}/5</b></div><p style="margin:7px 0">${esc(r.comment||'Sem comentário.')}</p><small>${esc(r.client?.full_name||'Cliente')} • ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></div>`).join(''):'<p class="muted">Ainda não há avaliações.</p>';
  return {avg,count:rows.length,html};
+}
+
+async function uploadProfessionalPhoto(){
+ const file=$("professional-photo")?.files?.[0];
+ if(!file)return toast("Escolha uma foto primeiro.");
+ if(!file.type.startsWith("image/"))return toast("Escolha um arquivo de imagem.");
+ if(file.size>5*1024*1024)return toast("A foto deve ter no máximo 5 MB.");
+ try{
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`${currentUser.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const {error:uploadError}=await db.storage.from(PROFESSIONAL_PHOTOS_BUCKET).upload(path,file,{upsert:false,contentType:file.type});
+  if(uploadError)throw uploadError;
+  const {data:urlData}=db.storage.from(PROFESSIONAL_PHOTOS_BUCKET).getPublicUrl(path);
+  const {error:updateError}=await db.from("profiles").update({photo_url:urlData.publicUrl}).eq("id",currentUser.id);
+  if(updateError)throw updateError;
+  await loadProfile();
+  renderProfessional();
+  toast("Foto salva! Agora ela aparecerá para os clientes.");
+ }catch(e){toast("Não foi possível enviar a foto: "+e.message);}
 }
 
 async function editProfessional(){
@@ -440,7 +469,7 @@ async function loadAdmin(){
   ['Pendentes',pending?.length||0],
   ['Suspensos',suspended],
   ['Clientes',adminUsersCache.filter(u=>u.role==='client').length],
-  ['Lojas',adminUsersCache.filter(u=>u.role==='store').length],
+['Lojas',adminUsersCache.filter(u=>u.role==='store').length],
   ['Solicitações',reqs?.length||0]
  ].map(x=>`<div class="card"><span class="muted">${x[0]}</span><h2 class="gold">${x[1]}</h2></div>`).join("");
  renderAdminUsers(adminUsersCache);
@@ -470,7 +499,7 @@ function renderAdminUsers(users){
  const el=$("admin-users");
  if(!el)return;
  el.innerHTML=users?.length?users.map(u=>{
-  const roleLabel=u.role==='admin'?'Administrador':u.role==='professional'?'Profissional':u.role==='store'?'🏪 Loja comercial':'Cliente';
+  const roleLabel = u.role==='admin' ? 'Administrador' : u.role==='professional' ? 'Profissional' : u.role==='store' ? '🏪 Loja comercial' : 'Cliente';
   const statusLabel=u.status==='active'?'Ativo':u.status==='pending'?'Pendente':'Suspenso';
   const statusClass=u.status==='active'?'green':u.status==='pending'?'yellow':'red';
   const expiry=u.subscription_until?new Date(u.subscription_until).toLocaleDateString('pt-BR'):'';
@@ -485,7 +514,7 @@ function filterAdminUsers(){
 }
 function adminViewUser(id){
  const u=adminUsersCache.find(x=>x.id===id);if(!u)return;
- const role=u.role==='admin'?'Administrador':u.role==='professional'?'Profissional':u.role==='store'?'🏪 Loja comercial':'Cliente';
+ const role = u.role==='admin' ? 'Administrador' : u.role==='professional' ? 'Profissional' : u.role==='store' ? '🏪 Loja comercial' : 'Cliente';
  const expiry=u.subscription_until?new Date(u.subscription_until).toLocaleDateString('pt-BR'):'Não informado';
  $("app").innerHTML=`<div class="section-title"><h2>Perfil do usuário</h2><button class="btn btn-outline btn-small" onclick="renderAdmin()">← Voltar</button></div><div class="card"><div class="professional"><div class="avatar">${u.photo_url?`<img src="${esc(u.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`:initials(u.full_name)}</div><div><h2 style="margin:0">${esc(u.full_name||'Sem nome')}</h2><p class="muted">${role} • ${u.status==='active'?'Ativo':u.status==='pending'?'Pendente':'Suspenso'}</p></div></div><div class="grid grid-2" style="margin-top:18px"><div><p><b>E-mail:</b> ${esc(u.email||'')}</p><p><b>Telefone:</b> ${esc(u.phone||'')}</p><p><b>Cidade:</b> ${esc(u.city||'')}</p><p><b>Categoria:</b> ${esc(u.service_category||'')}</p></div><div><p><b>Serviços:</b> ${esc(u.services||'Não informado')}</p><p><b>Experiência:</b> ${esc(u.experience||'Não informado')}</p><p><b>Área de atendimento:</b> ${esc(u.service_area||'Não informado')}</p><p><b>Assinatura até:</b> ${expiry}</p></div></div><div class="actions"><button class="btn btn-outline btn-small" onclick="renderAdmin()">Voltar ao painel</button>${u.id!==currentUser.id?(u.status==='suspended'?`<button class="btn btn-primary btn-small" onclick="adminSetStatus('${u.id}','active')">Reativar</button>`:`<button class="btn btn-danger btn-small" onclick="adminSetStatus('${u.id}','suspended')">Suspender</button><button class="btn btn-danger btn-small" onclick="adminBanUser('${u.id}')">🚫 Banir</button>`):''}${u.phone?`<a class="btn btn-outline btn-small" target="_blank" href="${wa('Olá, '+(u.full_name||'')+'. Aqui é do Conecta Serviços.')}">WhatsApp</a>`:''}</div></div>`;
 }
