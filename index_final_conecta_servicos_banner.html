@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conecta Serviços V2</title>
+  <meta name="description" content="Encontre profissionais verificados e solicite orçamentos." />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#06111d;--bg2:#0b1b2b;--card:#102538;--card2:#0c2032;
+      --gold:#ffc21c;--gold2:#ff9e16;--text:#f5f7fb;--muted:#a8b7c7;
+      --green:#20d49b;--red:#ff4b4b;--line:#29445c;--radius:22px;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:
+    radial-gradient(circle at 20% 0%,#12304a 0,transparent 38%),linear-gradient(140deg,var(--bg),#02070d);
+    color:var(--text);min-height:100vh} button,input,select,textarea{font:inherit}
+    button{cursor:pointer}.hidden{display:none!important}.app{max-width:1200px;margin:auto;padding:20px}
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0 24px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:23px}.logo{width:45px;height:45px;border-radius:15px;
+    display:grid;place-items:center;background:linear-gradient(135deg,var(--gold),#ff8d00);color:#07111b;font-size:29px;font-weight:1000;
+    box-shadow:0 0 35px #ffb00045}.brand span{color:var(--gold)}
+    .btn{border:1px solid transparent;border-radius:14px;padding:13px 18px;font-weight:800;transition:.2s}
+    .btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#101820}.btn-primary:hover{transform:translateY(-2px);filter:brightness(1.08)}
+    .btn-outline{background:transparent;border-color:var(--line);color:var(--text)}.btn-danger{background:var(--red);color:white}
+    .btn-small{padding:9px 12px;font-size:13px}.grid{display:grid;gap:18px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.card{background:linear-gradient(145deg,#10283d,#091a2a);
+    border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 15px 50px #0003}
+    .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:stretch;margin:28px 0}
+    .hero-main{padding:38px;border-radius:30px;background:linear-gradient(135deg,#0c2a40,#07121e 70%);border:1px solid #426078;position:relative;overflow:hidden}
+    .hero-main:after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;background:#ffb00015;right:-130px;bottom:-140px}
+    h1{font-size:clamp(34px,5vw,65px);line-height:1.02;margin:15px 0}.gold{color:var(--gold)}.muted{color:var(--muted)}
+    .tag{display:inline-flex;align-items:center;gap:8px;border:1px solid #526c83;border-radius:100px;padding:7px 11px;font-size:12px;color:#dbe8f4}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:25px 0 12px}
+    .section-title h2{margin:0;font-size:22px}.input,.select,.textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid #345069;background:#071522;color:var(--text);outline:none}
+    .input:focus,.select:focus,.textarea:focus{border-color:var(--gold)}.textarea{min-height:110px;resize:vertical}.label{display:block;font-size:13px;color:#c9d6e3;margin:0 0 7px}
+    .field{margin:13px 0}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .auth-wrap{max-width:500px;margin:45px auto}.tabs{display:flex;gap:5px;background:#06131f;border:1px solid var(--line);padding:5px;border-radius:15px;margin-bottom:18px}
+    .tab{flex:1;background:transparent;border:0;color:var(--muted);padding:11px;border-radius:11px}.tab.active{background:var(--gold);color:#101820;font-weight:900}
+    .pill{display:inline-block;padding:5px 9px;border-radius:100px;font-size:11px;font-weight:800;background:#15374a;color:#d6e5f4}
+    .pill.green{background:#0b503d;color:#76f2c5}.pill.yellow{background:#5b4311;color:#ffdc72}.pill.red{background:#5a2027;color:#ff9b9b}
+    .service-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.service{padding:18px 10px;text-align:center;border-radius:18px;
+    background:#0b2132;border:1px solid #24435b;color:var(--text)}.service .icon{font-size:28px;display:block;margin-bottom:8px}.service:hover{border-color:var(--gold);transform:translateY(-2px)}
+    .professional{display:flex;gap:15px;align-items:flex-start}.avatar{width:62px;height:62px;flex:0 0 62px;border-radius:20px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#365a78,#132a3e);font-size:25px;border:2px solid var(--gold)}
+    .professional h3{margin:0 0 5px}.professional p{margin:4px 0;color:var(--muted);font-size:13px}.price{font-size:20px;font-weight:900;color:var(--gold)}
+    .bottom-nav{position:sticky;bottom:12px;display:flex;justify-content:space-around;gap:5px;background:#06131fec;border:1px solid #365069;backdrop-filter:blur(16px);padding:10px;border-radius:20px;margin-top:28px}
+    .bottom-nav button{background:transparent;color:var(--muted);border:0;padding:9px;font-size:12px}.bottom-nav button.active{color:var(--gold)}
+    .notice{border-left:4px solid var(--gold);background:#2b2510;padding:14px;border-radius:12px;color:#ffe39a;font-size:13px}
+    .empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed #3c566d;border-radius:16px}
+    .footer{padding:35px 0 20px;text-align:center;color:var(--muted);font-size:12px}.toast{position:fixed;right:18px;bottom:18px;z-index:10;background:#102e40;border:1px solid #5b778e;padding:15px 18px;border-radius:14px;max-width:350px;box-shadow:0 20px 60px #0008}
+    .modal{position:fixed;inset:0;background:#0009;display:grid;place-items:center;padding:18px;z-index:5}.modal-card{width:min(520px,100%);max-height:90vh;overflow:auto}.profile-photo{width:110px;height:110px;border-radius:30px;object-fit:cover;border:2px solid var(--gold);display:block;margin:0 auto 14px}.profile-avatar-lg{width:110px;height:110px;border-radius:30px;display:grid;place-items:center;background:linear-gradient(135deg,#365a78,#132a3e);font-size:42px;border:2px solid var(--gold);margin:0 auto 14px}.profile-detail{padding:13px 14px;border:1px solid #29445c;border-radius:14px;background:#071522;margin-top:10px}.profile-detail b{display:block;margin-bottom:4px}.profile-detail span{color:var(--muted);font-size:13px}.stars{color:var(--gold);font-size:20px;letter-spacing:2px}.rating-summary{display:flex;align-items:center;gap:10px;margin:12px 0}.review{padding:14px;border:1px solid #29445c;border-radius:14px;background:#071522;margin-top:10px}.review small{color:var(--muted)}
+    @media(max-width:850px){.hero{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr 1fr}.service-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){.app{padding:12px}.grid-2,.grid-3,.form-grid{grid-template-columns:1fr}.hero-main{padding:25px}h1{font-size:42px}.nav{align-items:flex-start}.brand{font-size:19px}}
+  </style>
+<link rel="manifest" href="./manifest.json"><meta name="theme-color" content="#ffc21c"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="./icon-192.png"><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(console.error));}</script>
+</head>
+<body>
+<div id="toast" class="toast hidden"></div>
+<div class="app">
+  <header class="nav">
+    <div class="brand"><div class="logo">C</div><div>Conecta <span>Serviços</span></div></div>
+    <div id="nav-actions" class="actions" style="margin:0"></div>
+  </header>
+
+  <main id="app"></main>
+  <footer class="footer">Conecta Serviços • Segurança, praticidade e qualidade para contratar serviços.</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://qrzwnkuypwhzbreynzij.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_x9PtgKKvXfKYGPIhaMJw0g_Yr73KElr";
+const ADMIN_WHATSAPP = "5579999055301";
+const PROFESSIONAL_FEE = 4.99;
+const STORE_FEE = 4.99;
+const PROFESSIONAL_PHOTOS_BUCKET = "professional-photos";
+const STORE_PRODUCTS_BUCKET = "store-products";
+const STORE_BANNERS_BUCKET = "store-banners";
+const SUBSCRIPTION_DAYS = 30;
+const ADMIN_BAN_PASSWORD = "26";
+const sbReady = !SUPABASE_URL.startsWith("COLE_AQUI") && !SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
+const db = sbReady ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let currentUser = null, currentProfile = null, currentStore = null, selectedService = null, storeProductsCache = [];
+
+const $ = id => document.getElementById(id);
+function toast(msg){$("toast").textContent=msg;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),4200)}
+function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+function esc(v=""){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function initials(name=""){return name.split(" ").slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+function wa(text){return `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(text)}`}
+function professionalWa(phone,text){
+  const digits=String(phone||'').replace(/\D/g,'');
+  if(!digits)return '';
+  const number=digits.startsWith('55')?digits:'55'+digits;
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+}
+function demoGuard(){if(!sbReady){toast("Configure as chaves do Supabase no início do arquivo HTML.");return true}return false}
+
+async function getSession(){
+  if(!db){renderLanding();return}
+  const {data:{session}}=await db.auth.getSession();currentUser=session?.user||null;
+  if(currentUser){await loadProfile();renderDashboard()}else renderLanding();
+  db.auth.onAuthStateChange(async(_e,session)=>{currentUser=session?.user||null;if(currentUser){await loadProfile();renderDashboard()}else{currentProfile=null;renderLanding()}});
+}
+async function loadProfile(){
+  const {data,error}=await db.from("profiles").select("*").eq("id",currentUser.id).single();
+  if(error){console.error(error);return} currentProfile=data;
+  const {data:store}=await db.from("commercial_stores").select("*").eq("owner_id",currentUser.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  currentStore=store||null;
+}
+function nav(){
+  $("nav-actions").innerHTML=currentUser
+   ? `<span class="tag">${esc(currentProfile?.full_name||currentUser.email)}</span><button class="btn btn-outline btn-small" onclick="logout()">Sair</button>`
+   : `<button class="btn btn-outline btn-small" onclick="showAuth('login')">Entrar</button><button class="btn btn-primary btn-small" onclick="showAuth('register')">Criar conta</button>`;
+}
+function renderLanding(){
+ nav();
+ $("app").innerHTML=`
+ <section class="hero">
+  <div class="hero-main">
+    <span class="tag">✦ Plataforma de serviços locais</span>
+    <h1>Conecte sua necessidade a um <span class="gold">profissional de confiança.</span></h1>
+    <p class="muted" style="font-size:17px;max-width:560px">Encontre eletricistas, encanadores, profissionais de limpeza, pintura, manutenção e muito mais.</p>
+    <div class="actions"><button class="btn btn-primary" onclick="showAuth('register')">Começar agora →</button><button class="btn btn-outline" onclick="showAuth('login')">Já tenho conta</button></div>
+    <div class="actions"><span class="tag">✓ Profissionais cadastrados</span><span class="tag">✓ Solicitação de orçamento</span><span class="tag">✓ Atendimento pelo WhatsApp</span></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Seja um profissional</h2>
+    <p class="muted">Cadastre seus serviços e apareça para clientes da sua região.</p>
+    <div class="notice"><b>Taxa de ativação: ${money(PROFESSIONAL_FEE)}</b><br>Pagamento manual ao ADM via Pix/WhatsApp. Após a confirmação, seu acesso profissional é liberado por 30 dias.</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="showAuth('register','professional')">Cadastrar como profissional</button>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="showAuth('register','store')">🏪 Cadastrar minha loja — R$ 4,99</button>
+    <p class="muted" style="font-size:12px;margin-bottom:0">O cadastro fica pendente até o ADM confirmar o pagamento.</p>
+  </div>
+ </section>
+ <div class="section-title"><h2>Encontre por categoria</h2></div>
+ <div class="service-grid">
+  ${[['🏠','Construção'],['⚡','Elétrica'],['🚰','Hidráulica'],['🧹','Limpeza'],['🎨','Pintura'],['🌱','Jardinagem'],['🛠️','Manutenção'],['✨','Outros']].map(s=>`<button class="service" onclick="showAuth('register')"><span class="icon">${s[0]}</span><b>${s[1]}</b></button>`).join("")}
+ </div>
+ <div class="section-title"><h2>Como funciona</h2></div>
+ <div class="grid grid-3">
+  ${[['01','Crie sua conta','Cliente ou profissional, em poucos passos.'],['02','Conecte-se','Clientes encontram profissionais e pedem orçamento.'],['03','Resolva','Combine os detalhes e o atendimento diretamente.']].map(x=>`<div class="card"><span class="gold">${x[0]}</span><h3>${x[1]}</h3><p class="muted">${x[2]}</p></div>`).join("")}
+ </div>`;
+}
+function toggleStoreFields(){
+ const role=$("role")?.value; const box=$("store-fields"); if(box)box.style.display=role==='store'?'block':'none';
+}
+function showAuth(mode='login',role='client'){
+ nav();
+ $("app").innerHTML=`
+ <div class="auth-wrap card">
+  <div class="tabs"><button class="tab ${mode==='login'?'active':''}" onclick="showAuth('login')">Entrar</button><button class="tab ${mode==='register'?'active':''}" onclick="showAuth('register','${role}')">Criar conta</button></div>
+  <h2>${mode==='login'?'Bem-vindo de volta':'Crie sua conta'}</h2>
+  ${mode==='register'?`<div class="field"><label class="label">Tipo de cadastro</label><select id="role" class="select" onchange="toggleStoreFields()"><option value="client" ${role==='client'?'selected':''}>Cliente</option><option value="professional" ${role==='professional'?'selected':''}>Profissional</option><option value="store" ${role==='store'?'selected':''}>🏪 Loja comercial</option></select></div>
+  <div id="store-fields" class="card" style="display:${role==='store'?'block':'none'};margin:12px 0;padding:16px"><h3 style="margin-top:0">🏪 Dados da loja</h3><div class="field"><label class="label">Nome da loja</label><input id="store_name" class="input" placeholder="Nome da sua loja"></div><div class="form-grid"><div class="field"><label class="label">Categoria</label><input id="store_category" class="input" placeholder="Ex.: Material de construção"></div><div class="field"><label class="label">Endereço</label><input id="store_address" class="input" placeholder="Rua, número, bairro"></div></div><div class="field"><label class="label">Descrição da loja</label><textarea id="store_description" class="textarea" placeholder="Descreva sua loja e os produtos/serviços oferecidos"></textarea></div><div class="notice"><b>Taxa de cadastro da loja: <strong>${money(STORE_FEE)}</strong></b><br>Após o cadastro, o pedido ficará pendente até o ADM confirmar o pagamento. A ativação vale por 30 dias.</div></div>`:''}
+  <div class="field"><label class="label">Nome completo</label><input id="name" class="input" placeholder="Seu nome" ${mode==='login'?'style="display:none"':''}></div>
+  <div class="field"><label class="label">E-mail</label><input id="email" type="email" class="input" placeholder="voce@email.com"></div>
+  <div class="field"><label class="label">Telefone / WhatsApp</label><input id="phone" class="input" placeholder="(79) 99999-9999" ${mode==='login'?'style="display:none"':''}></div>
+  <div class="field"><label class="label">Cidade / Estado</label><input id="city" class="input" placeholder="Ex.: Aracaju - SE" ${mode==='login'?'style="display:none"':''}></div>
+  <div class="field"><label class="label">Senha</label><input id="password" type="password" class="input" placeholder="Mínimo de 6 caracteres"></div>
+  <button class="btn btn-primary" style="width:100%" onclick="${mode==='login'?'login()':'register()'}">${mode==='login'?'Entrar':'Cadastrar'}</button>
+  <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="renderLanding()">Voltar</button>
+  ${mode==='register'?`<p class="muted" style="font-size:12px">Profissionais e lojas: após o cadastro, o pedido fica pendente até o ADM confirmar o pagamento de ${money(PROFESSIONAL_FEE)}.</p>`:''}
+ </div>`;
+}
+async function login(){
+ if(demoGuard())return;
+ const email=$("email").value.trim(),password=$("password").value;
+ if(!email||!password)return toast("Preencha e-mail e senha.");
+ const {error}=await db.auth.signInWithPassword({email,password});if(error)return toast(error.message);
+}
+async function forgotPassword(){
+ if(demoGuard())return;
+ const email=$("email").value.trim()||prompt("Digite seu e-mail cadastrado:");
+ if(!email)return;
+ const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+ if(error)return toast(error.message);
+ toast("Enviamos um link para redefinir sua senha. Verifique seu e-mail.");
+}
+
+async function register(){
+ if(demoGuard())return;
+ const name=$("name").value.trim(),email=$("email").value.trim(),phone=$("phone").value.trim(),city=$("city").value.trim(),password=$("password").value,role=$("role").value;
+ const isStore=role==='store';
+ const storeName=$("store_name")?.value.trim()||"",storeCategory=$("store_category")?.value.trim()||"",storeAddress=$("store_address")?.value.trim()||"",storeDescription=$("store_description")?.value.trim()||"";
+ if(!name||!email||!phone||!city||password.length<6)return toast("Preencha todos os campos. A senha precisa ter 6 caracteres.");
+ if(isStore && (!storeName||!storeCategory||!storeAddress))return toast("Preencha nome, categoria e endereço da loja.");
+ const {data,error}=await db.auth.signUp({
+   email,
+   password,
+   options:{
+     data:{
+       full_name:name,
+       phone:phone,
+       city:city,
+       role:role
+     }
+   }
+ });
+ if(error)return toast(error.message);
+ if(data.user){
+   if(isStore){
+    const {error:storeError}=await db.from("commercial_stores").insert({owner_id:data.user.id,name:storeName,email,phone,city,address:storeAddress,category:storeCategory,description:storeDescription,status:'pending'});
+    if(storeError)return toast(storeError.message);
+    const msg=`Olá, ADM! Fiz o cadastro da minha loja no Conecta Serviços.%0A*Loja:* ${storeName}%0A*Responsável:* ${name}%0A*E-mail:* ${email}%0A*Telefone:* ${phone}%0A*Cidade:* ${city}%0A*Categoria:* ${storeCategory}%0A*Taxa de cadastro da loja:* ${money(STORE_FEE)}%0AAguardo a confirmação do pagamento e a liberação por 30 dias.`;
+    window.open(wa(msg),"_blank");
+    toast("Cadastro da loja enviado! Aguarde a liberação do ADM.");
+   }else if(role==='professional'){
+    const msg=`Olá, ADM! Fiz meu cadastro no Conecta Serviços como profissional.%0A*Nome:* ${name}%0A*E-mail:* ${email}%0A*Telefone:* ${phone}%0A*Cidade:* ${city}%0A*Taxa de ativação:* ${money(PROFESSIONAL_FEE)}%0AEstou pronto para enviar o comprovante e aguardar a liberação por 30 dias.`;
+    window.open(wa(msg),"_blank");
+    toast("Cadastro criado. Confira seu WhatsApp para falar com o ADM.");
+   }else toast("Cadastro criado! Verifique seu e-mail, se solicitado.");
+ }
+}
+async function logout(){if(db)await db.auth.signOut();currentUser=null;currentProfile=null;currentStore=null;storeProductsCache=[];renderLanding()}
+function renderDashboard(){
+ nav();
+ if(currentProfile?.role==='admin')return renderAdmin();
+ if(currentProfile?.role==='professional')return renderProfessional();
+ if(currentProfile?.role==='store' || currentStore)return renderStoreOwner();
+ return renderClient();
+}
+function renderClient(){
+ $("app").innerHTML=`
+ <div class="section-title"><h2>Olá, ${esc((currentProfile?.full_name||'cliente').split(' ')[0])}! 👋</h2><span class="pill green">Conta ativa</span></div>
+ <div class="card"><h2>Encontre o serviço que você precisa</h2><p class="muted">Busque por categoria e solicite um orçamento.</p><div class="field"><input id="search" class="input" placeholder="🔎 Buscar profissional ou serviço..." oninput="loadProfessionals()"></div></div>
+ <div class="section-title"><h2>🏪 Lojas e produtos</h2><button class="btn btn-outline btn-small" onclick="loadStoresForClients()">Atualizar</button></div>
+ <div id="stores" class="grid grid-2"><div class="empty">Carregando lojas...</div></div>
+ <div class="section-title"><h2>Profissionais disponíveis</h2><button class="btn btn-outline btn-small" onclick="loadProfessionals()">Atualizar</button></div>
+ <div id="professionals" class="grid grid-2"><div class="empty">Carregando profissionais...</div></div>
+ <div class="section-title"><h2>Minhas solicitações</h2></div><div id="my-requests" class="grid"><div class="empty">Carregando...</div></div>
+ <div class="bottom-nav"><button class="active">⌂<br>Início</button><button onclick="loadProfessionals()">⌕<br>Buscar</button><button onclick="renderClient()">♡<br>Favoritos</button><button onclick="showProfile()">♙<br>Perfil</button></div>`;
+ loadStoresForClients();loadProfessionals();loadRequests();
+}
+async function loadProfessionals(){
+ if(!db)return;
+ let q=db.from("profiles").select("*").eq("role","professional").eq("status","active").gt("subscription_until",new Date().toISOString()).order("created_at",{ascending:false});
+ const term=$("search")?.value?.trim();if(term)q=q.or(`full_name.ilike.%${term}%,service_category.ilike.%${term}%,city.ilike.%${term}%`);
+ const {data,error}=await q;if(error)return toast(error.message);
+ $("professionals").innerHTML=data?.length?data.map(p=>`<div class="card"><div class="professional">${p.photo_url?`<img class="avatar" src="${esc(p.photo_url)}" alt="Foto de ${esc(p.full_name)}" onerror="this.outerHTML='<div class=\"avatar\">${initials(p.full_name)}</div>'">`:`<div class="avatar">${initials(p.full_name)}</div>`}<div style="flex:1"><h3>${esc(p.full_name)} <span class="pill green">Verificado</span></h3><p>${esc(p.service_category||'Profissional de serviços')}</p><p>📍 ${esc(p.service_area||p.city||'Região não informada')}</p><p>🛠️ ${esc(p.services||'Serviços não informados')}</p></div></div><div class="actions"><button class="btn btn-primary btn-small" onclick="viewProfessional('${p.id}')">Ver perfil</button><button class="btn btn-outline btn-small" onclick="openRequest('${p.id}','${esc(p.full_name)}')">Solicitar orçamento</button>${p.phone?`<a class="btn btn-outline btn-small" href="${professionalWa(p.phone,'Olá, '+p.full_name+'. Encontrei seu perfil no Conecta Serviços e gostaria de solicitar um orçamento.')}" target="_blank">WhatsApp</a>`:''}</div></div>`).join(""):'<div class="empty">Nenhum profissional ativo encontrado.</div>';
+}
+async function viewProfessional(id){
+ const {data:p,error}=await db.from("profiles").select("*").eq("id",id).eq("role","professional").single();
+ if(error||!p)return toast("Não foi possível carregar o perfil deste profissional.");
+ const rating=await loadProfessionalRating(id);
+ const photo=p.photo_url?`<img class="profile-photo" src="${esc(p.photo_url)}" alt="Foto de ${esc(p.full_name)}" onerror="this.outerHTML='<div class="profile-avatar-lg">${initials(p.full_name)}</div>'">`:`<div class="profile-avatar-lg">${initials(p.full_name)}</div>`;
+ const phoneLink=p.phone?professionalWa(p.phone,'Olá, '+p.full_name+'. Encontrei seu perfil no Conecta Serviços e gostaria de solicitar um orçamento.'):'#';
+ const modal=document.createElement('div'); modal.className='modal'; modal.id='professional-profile-modal';
+ modal.innerHTML=`<div class="modal-card card"><button class="btn btn-outline btn-small" style="float:right" onclick="document.getElementById('professional-profile-modal').remove()">Fechar ✕</button>${photo}<div style="text-align:center"><h2 style="margin:0 0 7px">${esc(p.full_name)}</h2><span class="pill green">Profissional verificado</span><p class="muted">${esc(p.service_category||'Profissional de serviços')}</p><div class="rating-summary" style="justify-content:center">${stars(rating.avg)} <b>${rating.avg?rating.avg.toFixed(1):'0.0'}</b> <span class="muted">(${rating.count} ${rating.count===1?'avaliação':'avaliações'})</span></div></div><div class="profile-detail"><b>📍 Área de atendimento</b><span>${esc(p.service_area||p.city||'Não informada')}</span></div><div class="profile-detail"><b>🛠️ Serviços</b><span>${esc(p.services||'Não informado')}</span></div><div class="profile-detail"><b>💼 Experiência</b><span>${esc(p.experience||'Não informada')}</span></div><div class="profile-detail"><b>📝 Sobre o profissional</b><span>${esc(p.bio||'Descrição não informada')}</span></div><div class="profile-detail"><b>📞 Telefone / WhatsApp</b><span>${esc(p.phone||'Não informado')}</span></div><div class="profile-detail"><b>⭐ Avaliações dos clientes</b>${rating.html}</div><div class="actions"><button class="btn btn-primary" onclick="document.getElementById('professional-profile-modal').remove();openRequest('${p.id}','${esc(p.full_name)}')">Solicitar orçamento</button>${p.phone?`<a class="btn btn-outline" href="${phoneLink}" target="_blank">WhatsApp</a>`:''}</div></div>`;
+ document.body.appendChild(modal); modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+}
+
+async function openRequest(proId,name){
+ const service=prompt("Qual serviço você precisa?");if(!service)return;
+ const description=prompt("Descreva o serviço, local e detalhes:");if(!description)return;
+ const {error}=await db.from("service_requests").insert({client_id:currentUser.id,professional_id:proId,service,description,status:'pending'});
+ if(error)return toast(error.message);toast("Solicitação enviada!");loadRequests();
+}
+async function loadRequests(){
+ const {data,error}=await db.from("service_requests").select("*,professional:professional_id(full_name),client:client_id(full_name)").or(`client_id.eq.${currentUser.id},professional_id.eq.${currentUser.id}`).order("created_at",{ascending:false});
+ if(error)return;
+ const rows=data||[];
+ let reviewed=new Set();
+ if(currentProfile?.role==='client'){
+  const ids=rows.filter(r=>r.status==='completed').map(r=>r.id);
+  if(ids.length){const {data:rv}=await db.from('professional_reviews').select('service_request_id').eq('client_id',currentUser.id).in('service_request_id',ids);(rv||[]).forEach(x=>reviewed.add(x.service_request_id));}
+ }
+ $("my-requests").innerHTML=rows.length?rows.map(r=>{
+  const canReview=currentProfile?.role==='client'&&r.status==='completed'&&!reviewed.has(r.id);
+  const reviewedText=currentProfile?.role==='client'&&r.status==='completed'&&!canReview?'<p class="muted" style="margin-bottom:0">✓ Atendimento já avaliado.</p>':'';
+  return `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><b>${esc(r.service)}</b><span class="pill">${esc(r.status)}</span></div><p class="muted">${esc(r.description)}</p><small class="muted">Profissional: ${esc(r.professional?.full_name||'A definir')} • Cliente: ${esc(r.client?.full_name||'')}</small>${canReview?`<div class="actions"><button class="btn btn-primary btn-small" onclick="reviewService('${r.id}','${r.professional_id}','${esc(r.professional?.full_name||'profissional')}')">⭐ Avaliar atendimento</button></div>`:reviewedText}</div>`;
+ }).join(''):'<div class="empty">Você ainda não possui solicitações.</div>';
+}
+
+async function loadStoresForClients(){
+ if(!db||!($("stores")))return;
+ const {data:stores,error}=await db.from("commercial_stores").select("*").eq("status","active").order("created_at",{ascending:false});
+ if(error)return toast(error.message);
+ if(!stores?.length){$("stores").innerHTML='<div class="empty">Nenhuma loja comercial ativa no momento.</div>';return;}
+ const ids=stores.map(s=>s.id);
+ const {data:products}=await db.from("store_products").select("*").in("store_id",ids).eq("status","active").order("created_at",{ascending:false});
+ const byStore={};(products||[]).forEach(p=>(byStore[p.store_id]??=[]).push(p));
+ $("stores").innerHTML=stores.map(store=>{
+   const list=byStore[store.id]||[];
+   const preview=list.slice(0,4).map(p=>`<div style="border:1px solid #29445c;border-radius:14px;padding:10px;background:#071522"><img src="${esc(p.image_url||'')}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;background:#102538" onerror="this.style.display='none'"><b style="display:block;margin-top:7px">${esc(p.name)}</b><span class="price">${money(p.price)}</span></div>`).join('');
+   return `<div class="card">${store.banner_url?`<img src="${esc(store.banner_url)}" alt="Banner ${esc(store.name)}" style="width:100%;height:170px;object-fit:cover;border-radius:16px;margin-bottom:12px" onerror="this.style.display='none'">`:''}<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h3 style="margin:0">🏪 ${esc(store.name)}</h3><p class="muted">${esc(store.category||'Loja')} • 📍 ${esc(store.city||'')}</p></div><span class="pill green">Loja ativa</span></div><p class="muted">${esc(store.description||'')}</p>${list.length?`<div class="grid grid-2">${preview}</div>`:'<div class="empty">Esta loja ainda não publicou produtos.</div>'}<div class="actions"><button class="btn btn-primary btn-small" onclick="viewStore('${store.id}')">Ver loja e produtos</button>${store.phone?`<a class="btn btn-outline btn-small" target="_blank" href="${professionalWa(store.phone,'Olá! Encontrei sua loja no Conecta Serviços e gostaria de informações sobre seus produtos.')}">WhatsApp</a>`:''}</div></div>`;
+ }).join('');
+}
+async function viewStore(storeId){
+ const {data:store,error}=await db.from("commercial_stores").select("*").eq("id",storeId).eq("status","active").single();
+ if(error||!store)return toast("Loja não encontrada.");
+ const {data:products}=await db.from("store_products").select("*").eq("store_id",storeId).eq("status","active").order("created_at",{ascending:false});
+ $("app").innerHTML=`<div class="section-title"><h2>🏪 ${esc(store.name)}</h2><button class="btn btn-outline btn-small" onclick="renderClient()">← Voltar</button></div><div class="card">${store.banner_url?`<img src="${esc(store.banner_url)}" alt="Banner da loja" style="width:100%;height:220px;object-fit:cover;border-radius:18px;margin-bottom:14px" onerror="this.style.display='none'">`:''}<p class="muted">${esc(store.category||'')} • 📍 ${esc(store.city||'')}</p><p>${esc(store.description||'')}</p>${store.address?`<p class="muted">📍 ${esc(store.address)}</p>`:''}${store.phone?`<a class="btn btn-primary btn-small" target="_blank" href="${professionalWa(store.phone,'Olá! Vi sua loja no Conecta Serviços e gostaria de informações.')}">Falar com a loja</a>`:''}</div><div class="section-title"><h2>Produtos</h2></div><div class="grid grid-3">${products?.length?products.map(p=>`<div class="card"><img src="${esc(p.image_url||'')}" style="width:100%;height:190px;object-fit:cover;border-radius:16px;background:#102538" onerror="this.style.display='none'"><h3>${esc(p.name)}</h3><p class="muted">${esc(p.description||'')}</p><div class="price">${money(p.price)}</div></div>`).join(''):'<div class="empty">A loja ainda não publicou produtos.</div>'}</div>`;
+}
+
+async function renderStoreOwner(){
+ const active=currentStore?.status==='active'&&currentStore?.subscription_until&&new Date(currentStore.subscription_until)>new Date();
+ const banner=currentStore?.banner_url||'';
+ $("app").innerHTML=`
+ <div class="section-title"><h2>🏪 Painel da loja</h2><span class="pill ${active?'green':'yellow'}">${active?'Loja ativa':'Aguardando ativação'}</span></div>
+ <div class="card"><h2>${esc(currentStore?.name||'Minha loja')}</h2><p class="muted">${esc(currentStore?.category||'')} • ${esc(currentStore?.city||'')}</p><p>${esc(currentStore?.description||'')}</p>${banner?`<img src="${esc(banner)}" alt="Banner da loja" style="width:100%;max-height:260px;object-fit:cover;border-radius:18px;margin-top:14px" onerror="this.style.display='none'">`:''}${active?`<div class="notice">Sua loja está ativa até <b>${new Date(currentStore.subscription_until).toLocaleDateString('pt-BR')}</b>.</div>`:`<div class="notice">Taxa de cadastro: <b>${money(STORE_FEE)}</b>. Aguarde a confirmação do pagamento pelo ADM para liberar a loja por 30 dias.</div>`}</div>
+ <div class="section-title"><h2>🎨 Marca e divulgação</h2></div>
+ <div class="card"><h3>Banner da sua loja</h3><p class="muted">Adicione uma imagem de capa para divulgar sua marca. Recomendado: imagem horizontal.</p>${banner?`<img src="${esc(banner)}" alt="Banner atual" style="width:100%;height:180px;object-fit:cover;border-radius:18px;margin:8px 0 14px" onerror="this.style.display='none'">`:''}<input id="store-banner-file" type="file" accept="image/*" class="input" ${active?'':'disabled'}><button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="saveStoreBanner()" ${active?'':'disabled'}>📤 ${banner?'Trocar banner':'Adicionar banner'}</button>${banner?`<button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="removeStoreBanner()" ${active?'':'disabled'}>🗑️ Remover banner</button>`:''}</div>
+ <div class="section-title"><h2>📦 Meus produtos</h2><button class="btn btn-primary btn-small" onclick="openProductForm()" ${active?'':'disabled'}>+ Adicionar produto</button></div>
+ <div id="store-products" class="grid grid-3"><div class="empty">Carregando produtos...</div></div>
+ <div class="bottom-nav"><button class="active" onclick="renderStoreOwner()">⌂<br>Loja</button><button onclick="openProductForm()" ${active?'':'disabled'}>＋<br>Produto</button><button onclick="editStoreData()">⚙<br>Perfil</button></div>`;
+ loadStoreProducts();
+}
+async function saveStoreBanner(){
+ const file=$("store-banner-file")?.files?.[0];
+ if(!file)return toast('Escolha uma imagem para o banner.');
+ if(!currentStore?.id)return toast('Loja não encontrada.');
+ try{
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`${currentUser.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const {error:upErr}=await db.storage.from(STORE_BANNERS_BUCKET).upload(path,file,{upsert:false,contentType:file.type});
+  if(upErr)throw upErr;
+  const {data:urlData}=db.storage.from(STORE_BANNERS_BUCKET).getPublicUrl(path);
+  const {error:dbErr}=await db.from('commercial_stores').update({banner_url:urlData.publicUrl}).eq('id',currentStore.id).eq('owner_id',currentUser.id);
+  if(dbErr)throw dbErr;
+  await loadProfile(); renderStoreOwner(); toast('Banner da loja salvo com sucesso!');
+ }catch(e){toast('Não foi possível salvar o banner: '+e.message);}
+}
+async function removeStoreBanner(){
+ if(!currentStore?.id)return;
+ if(!confirm('Remover o banner da loja?'))return;
+ const {error}=await db.from('commercial_stores').update({banner_url:null}).eq('id',currentStore.id).eq('owner_id',currentUser.id);
+ if(error)return toast(error.message);
+ await loadProfile();renderStoreOwner();toast('Banner removido.');
+}
+async function loadStoreProducts(){
+ const {data,error}=await db.from("store_products").select("*").eq("store_id",currentStore.id).order("created_at",{ascending:false});
+ if(error)return toast(error.message);
+ storeProductsCache=data||[];
+ const el=$("store-products"); if(!el)return;
+ el.innerHTML=storeProductsCache.length?storeProductsCache.map(p=>`<div class="card"><img src="${esc(p.image_url||'')}" style="width:100%;height:190px;object-fit:cover;border-radius:16px;background:#102538" onerror="this.style.display='none'"><h3>${esc(p.name)}</h3><p class="muted">${esc(p.description||'')}</p><div class="price">${money(p.price)}</div><p><span class="pill ${p.status==='active'?'green':'yellow'}">${p.status==='active'?'Publicado':'Pausado'}</span></p><div class="actions"><button class="btn btn-outline btn-small" onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-outline btn-small" onclick="toggleProduct('${p.id}','${p.status==='active'?'paused':'active'}')">${p.status==='active'?'Pausar':'Publicar'}</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Excluir</button></div></div>`).join(''):'<div class="empty">Você ainda não cadastrou produtos.</div>';
+}
+function openProductForm(product=null){
+ const p=product||{};
+ const modal=document.createElement('div');modal.className='modal';modal.id='product-modal';
+ modal.innerHTML=`<div class="modal-card card"><div class="section-title" style="margin-top:0"><h2>${product?'Editar':'Adicionar'} produto</h2><button class="btn btn-outline btn-small" onclick="closeProductModal()">✕</button></div><div class="field"><label class="label">Nome do produto</label><input id="product-name" class="input" value="${esc(p.name||'')}" placeholder="Ex.: Tênis esportivo"></div><div class="field"><label class="label">Descrição</label><textarea id="product-description" class="textarea" placeholder="Detalhes do produto">${esc(p.description||'')}</textarea></div><div class="form-grid"><div class="field"><label class="label">Preço</label><input id="product-price" type="number" step="0.01" min="0" class="input" value="${p.price??''}" placeholder="0,00"></div><div class="field"><label class="label">Foto do produto</label><input id="product-image" type="file" accept="image/*" class="input"></div></div><p class="muted" style="font-size:12px">Escolha uma foto do celular ou computador. A imagem será enviada para o armazenamento da sua loja.</p><button class="btn btn-primary" style="width:100%" onclick="saveProduct('${product?.id||''}')">${product?'Salvar alterações':'Publicar produto'}</button></div>`;
+ document.body.appendChild(modal);
+}
+function closeProductModal(){$("product-modal")?.remove()}
+async function uploadProductImage(file){
+ if(!file)return '';
+ const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+ const path=`${currentUser.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+ const {error}=await db.storage.from(STORE_PRODUCTS_BUCKET).upload(path,file,{upsert:false,contentType:file.type});
+ if(error)throw error;
+ const {data}=db.storage.from(STORE_PRODUCTS_BUCKET).getPublicUrl(path);
+ return data.publicUrl;
+}
+async function saveProduct(id=''){
+ const name=$("product-name").value.trim(),description=$("product-description").value.trim(),price=Number($("product-price").value),file=$("product-image").files[0];
+ if(!name||!Number.isFinite(price)||price<0)return toast('Informe nome e preço do produto.');
+ try{
+  let image_url='';
+  if(file)image_url=await uploadProductImage(file);
+  const payload={store_id:currentStore.id,owner_id:currentUser.id,name,description,price,status:'active'};
+  if(image_url)payload.image_url=image_url;
+  let result=id?await db.from('store_products').update(payload).eq('id',id).eq('owner_id',currentUser.id):await db.from('store_products').insert(payload);
+  if(result.error)throw result.error;
+  closeProductModal();toast(id?'Produto atualizado!':'Produto publicado!');loadStoreProducts();
+ }catch(e){toast('Não foi possível salvar o produto: '+e.message);}
+}
+function editProduct(id){const p=storeProductsCache.find(x=>x.id===id);if(p)openProductForm(p)}
+async function toggleProduct(id,status){const {error}=await db.from('store_products').update({status}).eq('id',id).eq('owner_id',currentUser.id);if(error)return toast(error.message);loadStoreProducts()}
+async function deleteProduct(id){if(!confirm('Excluir este produto?'))return;const {error}=await db.from('store_products').delete().eq('id',id).eq('owner_id',currentUser.id);if(error)return toast(error.message);toast('Produto excluído.');loadStoreProducts()}
+async function editStoreData(){
+ const name=prompt('Nome da loja:',currentStore.name||'');if(name===null)return;
+ const category=prompt('Categoria:',currentStore.category||'');if(category===null)return;
+ const address=prompt('Endereço:',currentStore.address||'');if(address===null)return;
+ const description=prompt('Descrição da loja:',currentStore.description||'');if(description===null)return;
+ const {error}=await db.from('commercial_stores').update({name,category,address,description}).eq('id',currentStore.id).eq('owner_id',currentUser.id);
+ if(error)return toast(error.message);await loadProfile();renderStoreOwner();toast('Dados da loja atualizados.');
+}
+
+function renderProfessional(){
+ const active=currentProfile?.role==='professional' && currentProfile.status==='active' && currentProfile.subscription_until && new Date(currentProfile.subscription_until)>new Date();
+ $("app").innerHTML=`
+ <div class="section-title"><h2>Painel do profissional</h2><span class="pill ${active?'green':'yellow'}">${active?'Assinatura ativa':'Aguardando ativação'}</span></div>
+ ${active?`<div class="card"><h2>Olá, ${esc(currentProfile.full_name)} 👋</h2><p class="muted">Seu acesso está ativo até <b>${new Date(currentProfile.subscription_until).toLocaleDateString('pt-BR')}</b>.</p></div>`:
+ `<div class="card"><h2>Ative seu acesso profissional</h2><div class="notice">Taxa: <b>${money(PROFESSIONAL_FEE)}</b>. Fale com o ADM, pague via Pix e envie o comprovante. O ADM libera o acesso por 30 dias após confirmar o pagamento.</div><a class="btn btn-primary" style="display:inline-block;margin-top:16px;text-decoration:none" href="${wa('Olá, ADM! Sou '+currentProfile.full_name+'. Quero pagar a taxa de ativação de '+money(PROFESSIONAL_FEE)+' e liberar meu acesso por 30 dias.')}" target="_blank">Falar com ADM no WhatsApp</a></div>`}
+ <div class="grid grid-2">
+  <div class="card"><h3>Minha conta</h3><p class="muted">${esc(currentProfile.email)}</p><p class="muted">${esc(currentProfile.phone||'')}</p><p class="muted">${esc(currentProfile.city||'')}</p></div>
+  <div class="card"><h3>Minha foto</h3>${currentProfile.photo_url?`<img src="${esc(currentProfile.photo_url)}" alt="Minha foto" style="width:110px;height:110px;object-fit:cover;border-radius:22px;border:2px solid var(--gold);display:block;margin-bottom:12px" onerror="this.style.display='none'">`:''}<input id="professional-photo" type="file" accept="image/*" class="input"><p class="muted" style="font-size:12px">Escolha uma foto sua. Ela será exibida para os clientes no seu perfil.</p><button class="btn btn-primary btn-small" onclick="uploadProfessionalPhoto()">Salvar foto</button></div>
+ </div>
+ <div class="card"><h3>Meus serviços</h3><p class="muted">${esc(currentProfile.service_category||'Ainda não informado')}</p><button class="btn btn-outline btn-small" onclick="editProfessional()">Editar dados</button></div>
+ <div class="section-title"><h2>Solicitações recebidas</h2></div><div id="pro-requests" class="grid"><div class="empty">Carregando...</div></div>
+ <div class="bottom-nav"><button class="active">⌂<br>Início</button><button onclick="loadProfessionalRequests()">▤<br>Solicitações</button><button onclick="editProfessional()">⚙<br>Perfil</button></div>`;
+ loadProfessionalRequests();
+}
+async function loadProfessionalRequests(){
+ const {data,error}=await db.from("service_requests").select("*,client:client_id(full_name,phone,city)").eq("professional_id",currentUser.id).order("created_at",{ascending:false});
+ if(error)return toast(error.message);
+ $("pro-requests").innerHTML=data?.length?data.map(r=>{
+  let actions='';
+  if(r.status==='pending')actions=`<button class="btn btn-primary btn-small" onclick="updateRequest('${r.id}','accepted')">Aceitar</button><button class="btn btn-outline btn-small" onclick="updateRequest('${r.id}','rejected')">Recusar</button>`;
+  else if(r.status==='accepted')actions=`<button class="btn btn-primary btn-small" onclick="completeRequest('${r.id}')">Concluir serviço</button>`;
+  else if(r.status==='completed')actions=`<span class="pill green">Serviço concluído</span>`;
+  return `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><b>${esc(r.service)}</b><span class="pill">${esc(r.status)}</span></div><p class="muted">${esc(r.description)}</p><p class="muted">Cliente: ${esc(r.client?.full_name||'')} • ${esc(r.client?.phone||'')}</p><div class="actions">${actions}</div></div>`;
+ }).join(''):'<div class="empty">Nenhuma solicitação recebida.</div>';
+}
+async function updateRequest(id,status){const {error}=await db.from("service_requests").update({status}).eq("id",id);if(error)return toast(error.message);toast("Solicitação atualizada.");loadProfessionalRequests()}
+async function completeRequest(id){
+ if(!confirm("Confirmar que este serviço foi concluído?"))return;
+ const {error}=await db.from("service_requests").update({status:"completed"}).eq("id",id).eq("professional_id",currentUser.id).eq("status","accepted");
+ if(error)return toast(error.message); toast("Serviço concluído. O cliente poderá avaliar o atendimento."); loadProfessionalRequests();
+}
+async function reviewService(requestId,professionalId,professionalName){
+ const rating=prompt("Dê uma nota de 1 a 5 estrelas para "+professionalName+":"); if(rating===null)return;
+ const nota=Number(rating); if(!Number.isInteger(nota)||nota<1||nota>5)return toast("A nota deve ser um número de 1 a 5.");
+ const comment=prompt("Quer deixar um comentário? (opcional)")||"";
+ const {data:req,error:reqError}=await db.from('service_requests').select('id,professional_id,status,client_id').eq('id',requestId).single();
+ if(reqError||!req||req.client_id!==currentUser.id||req.professional_id!==professionalId||req.status!=='completed')return toast("Esse atendimento não está disponível para avaliação.");
+ const {error}=await db.from('professional_reviews').insert({professional_id:professionalId,client_id:currentUser.id,service_request_id:requestId,rating:nota,comment});
+ if(error)return toast(error.code==='23505'?'Você já avaliou este atendimento.':error.message); toast("Avaliação enviada com sucesso!"); loadRequests();
+}
+function stars(value){const n=Math.max(0,Math.min(5,Math.round(Number(value)||0)));return `<span class="stars">${'★'.repeat(n)}${'☆'.repeat(5-n)}</span>`;}
+async function loadProfessionalRating(professionalId){
+ const {data,error}=await db.from('professional_reviews').select('rating,comment,created_at,client:client_id(full_name)').eq('professional_id',professionalId).order('created_at',{ascending:false});
+ if(error)return {avg:0,count:0,html:'<p class="muted">Ainda não há avaliações.</p>'};
+ const rows=data||[],avg=rows.length?rows.reduce((sum,r)=>sum+Number(r.rating||0),0)/rows.length:0;
+ const html=rows.length?rows.map(r=>`<div class="review"><div>${stars(r.rating)} <b>${Number(r.rating).toFixed(0)}/5</b></div><p style="margin:7px 0">${esc(r.comment||'Sem comentário.')}</p><small>${esc(r.client?.full_name||'Cliente')} • ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></div>`).join(''):'<p class="muted">Ainda não há avaliações.</p>';
+ return {avg,count:rows.length,html};
+}
+
+async function uploadProfessionalPhoto(){
+ const file=$("professional-photo")?.files?.[0];
+ if(!file)return toast("Escolha uma foto primeiro.");
+ if(!file.type.startsWith("image/"))return toast("Escolha um arquivo de imagem.");
+ if(file.size>5*1024*1024)return toast("A foto deve ter no máximo 5 MB.");
+ try{
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`${currentUser.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const {error:uploadError}=await db.storage.from(PROFESSIONAL_PHOTOS_BUCKET).upload(path,file,{upsert:false,contentType:file.type});
+  if(uploadError)throw uploadError;
+  const {data:urlData}=db.storage.from(PROFESSIONAL_PHOTOS_BUCKET).getPublicUrl(path);
+  const {error:updateError}=await db.from("profiles").update({photo_url:urlData.publicUrl}).eq("id",currentUser.id);
+  if(updateError)throw updateError;
+  await loadProfile();
+  renderProfessional();
+  toast("Foto salva! Agora ela aparecerá para os clientes.");
+ }catch(e){toast("Não foi possível enviar a foto: "+e.message);}
+}
+
+async function editProfessional(){
+ const category=prompt("Categoria/serviço principal:",currentProfile.service_category||"");if(category===null)return;
+ const city=prompt("Cidade/Estado:",currentProfile.city||"");if(city===null)return;
+ const area=prompt("Área de atendimento:",currentProfile.service_area||"");if(area===null)return;
+ const services=prompt("Serviços que você oferece:",currentProfile.services||"");if(services===null)return;
+ const experience=prompt("Experiência profissional:",currentProfile.experience||"");if(experience===null)return;
+ const bio=prompt("Sobre você/profissional:",currentProfile.bio||"");if(bio===null)return;
+ const photo=prompt("URL da sua foto (opcional):",currentProfile.photo_url||"");if(photo===null)return;
+ const {error}=await db.from("profiles").update({service_category:category,city,service_area:area,services,experience,bio,photo_url:photo}).eq("id",currentUser.id);
+ if(error)return toast(error.message); await loadProfile(); renderProfessional(); toast("Perfil atualizado.");
+}
+
+function showProfile(){toast("Perfil conectado ao seu cadastro.")}
+async function renderAdmin(){
+ $("app").innerHTML=`
+ <div class="section-title"><h2>👑 Painel administrativo</h2><div class="actions" style="margin:0"><span class="pill green">Administrador</span><button class="btn btn-outline btn-small" onclick="renderAdmin()">Atualizar</button></div></div>
+ <div class="grid grid-3" id="stats"></div>
+
+ <div class="section-title"><h2>👤 Usuários cadastrados</h2></div>
+ <div class="card"><div class="field" style="margin:0"><input id="admin-search" class="input" placeholder="🔎 Buscar por nome, e-mail, cidade ou telefone..." oninput="filterAdminUsers()"></div></div>
+ <div id="admin-users" class="grid grid-2"><div class="empty">Carregando usuários...</div></div>
+
+ <div class="section-title"><h2>⏳ Profissionais pendentes</h2></div>
+ <div id="pending" class="grid"><div class="empty">Carregando...</div></div>
+
+ <div class="section-title"><h2>🏪 Lojas comerciais pendentes</h2></div>
+ <div id="pending-stores" class="grid grid-2"><div class="empty">Carregando lojas...</div></div>
+
+ <div class="section-title"><h2>📋 Solicitações da plataforma</h2></div>
+ <div id="admin-requests" class="grid"><div class="empty">Carregando...</div></div>
+  <div class="section-title"><h2>⭐ Avaliações</h2></div><div id="admin-reviews" class="grid"><div class="empty">Carregando...</div></div>`;
+ loadAdmin();
+}
+let adminUsersCache=[];
+async function loadAdmin(){
+ const [{data:users},{data:pending},{data:stores,error:storesError},{data:reqs},{data:reviews}]=await Promise.all([
+  db.from("profiles").select("*"),
+  db.from("profiles").select("*").eq("role","professional").eq("status","pending").order("created_at",{ascending:false}),
+  db.from("commercial_stores").select("*").eq("status","pending").order("created_at",{ascending:false}),
+  db.from("service_requests").select("*,client:client_id(full_name),professional:professional_id(full_name)").order("created_at",{ascending:false}).limit(30),
+   db.from("professional_reviews").select("*,client:client_id(full_name),professional:professional_id(full_name)").order("created_at",{ascending:false}).limit(50)
+ ]);
+ adminUsersCache=users||[];
+ const professionals=adminUsersCache.filter(u=>u.role==='professional');
+ const activePros=professionals.filter(u=>u.status==='active' && u.subscription_until && new Date(u.subscription_until)>new Date()).length;
+ const suspended=adminUsersCache.filter(u=>u.status==='suspended').length;
+ $("stats").innerHTML=[
+  ['Usuários',adminUsersCache.length],
+  ['Profissionais ativos',activePros],
+  ['Pendentes',pending?.length||0],
+  ['Suspensos',suspended],
+  ['Clientes',adminUsersCache.filter(u=>u.role==='client').length],['Lojas',adminUsersCache.filter(u=>u.role==='store').length],
+  ['Solicitações',reqs?.length||0]
+ ].map(x=>`<div class="card"><span class="muted">${x[0]}</span><h2 class="gold">${x[1]}</h2></div>`).join("");
+ renderAdminUsers(adminUsersCache);
+ $("pending").innerHTML=pending?.length?pending.map(p=>`<div class="card"><div class="professional"><div class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:18px" onerror="this.style.display='none'">`:initials(p.full_name)}</div><div style="flex:1"><h3>${esc(p.full_name)}</h3><p>${esc(p.email)} • ${esc(p.phone||'')}</p><p>${esc(p.city||'')} • ${esc(p.service_category||'')}</p><span class="pill yellow">Pagamento pendente</span></div></div><div class="actions"><button class="btn btn-primary btn-small" onclick="activateProfessional('${p.id}')">Confirmar pagamento e liberar 30 dias</button><button class="btn btn-outline btn-small" onclick="adminViewUser('${p.id}')">Ver perfil</button><a class="btn btn-outline btn-small" target="_blank" href="${wa('Olá, '+p.full_name+'. Estou entrando em contato sobre sua ativação no Conecta Serviços.')}">WhatsApp</a></div></div>`).join(""):'<div class="empty">Nenhum profissional pendente.</div>';
+ $("pending-stores").innerHTML=storesError
+  ? `<div class="empty">Não foi possível carregar as lojas: ${esc(storesError.message||"erro desconhecido")}</div>`
+  : (stores?.length?stores.map(st=>`<div class="card"><div class="professional"><div class="avatar">🏪</div><div style="flex:1"><h3>${esc(st.name||"Loja sem nome")}</h3><p>${esc(st.email||"")} • ${esc(st.phone||"")}</p><p>📍 ${esc(st.city||"Não informada")}</p><p>🏷️ ${esc(st.category||"Não informada")}</p><span class="pill yellow">Pagamento pendente</span></div></div><p class="muted" style="margin-top:12px">${esc(st.description||"Sem descrição")}</p><div class="actions"><button class="btn btn-primary btn-small" onclick="activateStore('${st.id}')">Confirmar pagamento e liberar 30 dias</button><button class="btn btn-danger btn-small" onclick="suspendStore('${st.id}')">Recusar / suspender</button>${st.phone?`<a class="btn btn-outline btn-small" target="_blank" href="${wa('Olá, '+(st.name||'')+'. Estou entrando em contato sobre a ativação da sua loja no Conecta Serviços.')}">WhatsApp</a>`:''}</div></div>`).join(""):'<div class="empty">Nenhuma loja pendente.</div>');
+ $("admin-requests").innerHTML=reqs?.length?reqs.map(r=>`<div class="card"><b>${esc(r.service)}</b><p class="muted">${esc(r.description)}</p><small class="muted">Cliente: ${esc(r.client?.full_name||'')} • Profissional: ${esc(r.professional?.full_name||'')} • ${esc(r.status)}</small></div>`).join(""):'<div class="empty">Nenhuma solicitação.</div>';
+  $("admin-reviews").innerHTML=reviews?.length?reviews.map(r=>`<div class="card"><div>${stars(r.rating)} <b>${Number(r.rating)}/5</b></div><p>${esc(r.comment||'Sem comentário.')}</p><small class="muted">Cliente: ${esc(r.client?.full_name||'')} • Profissional: ${esc(r.professional?.full_name||'')} • ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></div>`).join(''):'<div class="empty">Nenhuma avaliação cadastrada.</div>';
+}
+async function activateStore(id){
+ if(!confirm("Você confirmou o pagamento de R$ 4,99 e deseja liberar esta loja por 30 dias?"))return;
+ const until=new Date(Date.now()+SUBSCRIPTION_DAYS*24*60*60*1000).toISOString();
+ const {error}=await db.from("commercial_stores").update({status:"active",subscription_until:until}).eq("id",id);
+ if(error)return toast(error.message);
+ toast("Loja ativada até "+new Date(until).toLocaleDateString("pt-BR"));
+ loadAdmin();
+}
+
+async function activateStoreByOwner(ownerId){
+ const {data:store,error}=await db.from('commercial_stores').select('id,name,status').eq('owner_id',ownerId).maybeSingle();
+ if(error)return toast(error.message);
+ if(!store)return toast('Nenhuma loja encontrada para este usuário.');
+ await activateStore(store.id);
+}
+
+async function suspendStoreByOwner(ownerId){
+ const {data:store,error}=await db.from('commercial_stores').select('id,name,status').eq('owner_id',ownerId).maybeSingle();
+ if(error)return toast(error.message);
+ if(!store)return toast('Nenhuma loja encontrada para este usuário.');
+ await suspendStore(store.id);
+}
+async function suspendStore(id){
+ if(!confirm("Deseja recusar/suspender esta loja?"))return;
+ const {error}=await db.from("commercial_stores").update({status:"suspended"}).eq("id",id);
+ if(error)return toast(error.message);
+ toast("Loja suspensa.");
+ loadAdmin();
+}
+function renderAdminUsers(users){
+ const el=$("admin-users");
+ if(!el)return;
+ el.innerHTML=users?.length?users.map(u=>{
+  const roleLabel=u.role==='admin'?'Administrador':u.role==='professional'?'Profissional':u.role==='store'?'🏪 Loja comercial':'Cliente';
+  const statusLabel=u.status==='active'?'Ativo':u.status==='pending'?'Pendente':'Suspenso';
+  const statusClass=u.status==='active'?'green':u.status==='pending'?'yellow':'red';
+  const expiry=u.subscription_until?new Date(u.subscription_until).toLocaleDateString('pt-BR'):'';
+  const canToggle=u.id!==currentUser.id;
+  return `<div class="card"><div class="professional"><div class="avatar">${u.photo_url?`<img src="${esc(u.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:18px" onerror="this.style.display='none'">`:initials(u.full_name)}</div><div style="flex:1"><h3>${esc(u.full_name||'Sem nome')}</h3><p>${esc(u.email||'')} • ${esc(u.phone||'')}</p><p>📍 ${esc(u.city||'Não informado')}</p><div class="actions" style="margin-top:8px"><span class="pill">${roleLabel}</span><span class="pill ${statusClass}">${statusLabel}</span>${expiry?`<span class="pill">Vence: ${expiry}</span>`:''}</div></div></div><div class="actions"><button class="btn btn-outline btn-small" onclick="adminViewUser('${u.id}')">Ver perfil</button>${u.role==='store'&&u.status==='pending'?`<button class="btn btn-primary btn-small" onclick="activateStoreByOwner('${u.id}')">✅ LIBERAR ACESSO POR 30 DIAS</button><button class="btn btn-danger btn-small" onclick="suspendStoreByOwner('${u.id}')">❌ Recusar</button>`:''}${canToggle?(u.status==='suspended'?`<button class="btn btn-primary btn-small" onclick="adminSetStatus('${u.id}','active')">Reativar</button>`:`<button class="btn btn-danger btn-small" onclick="adminSetStatus('${u.id}','suspended')">Suspender</button><button class="btn btn-danger btn-small" onclick="adminBanUser('${u.id}')">🚫 Banir</button>`):''}${u.phone?`<a class="btn btn-outline btn-small" target="_blank" href="${wa('Olá, '+(u.full_name||'')+'. Aqui é do Conecta Serviços.')}">WhatsApp</a>`:''}</div></div>`;
+ }).join(""):'<div class="empty">Nenhum usuário encontrado.</div>';
+}
+function filterAdminUsers(){
+ const term=$("admin-search")?.value?.toLowerCase().trim()||'';
+ const filtered=adminUsersCache.filter(u=>[u.full_name,u.email,u.phone,u.city,u.service_category,u.role,u.status].some(v=>String(v||'').toLowerCase().includes(term)));
+ renderAdminUsers(filtered);
+}
+function adminViewUser(id){
+ const u=adminUsersCache.find(x=>x.id===id);if(!u)return;
+ const role=u.role==='admin'?'Administrador':u.role==='professional'?'Profissional':u.role==='store'?'🏪 Loja comercial':'Cliente';
+ const expiry=u.subscription_until?new Date(u.subscription_until).toLocaleDateString('pt-BR'):'Não informado';
+ $("app").innerHTML=`<div class="section-title"><h2>Perfil do usuário</h2><button class="btn btn-outline btn-small" onclick="renderAdmin()">← Voltar</button></div><div class="card"><div class="professional"><div class="avatar">${u.photo_url?`<img src="${esc(u.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:18px">`:initials(u.full_name)}</div><div><h2 style="margin:0">${esc(u.full_name||'Sem nome')}</h2><p class="muted">${role} • ${u.status==='active'?'Ativo':u.status==='pending'?'Pendente':'Suspenso'}</p></div></div><div class="grid grid-2" style="margin-top:18px"><div><p><b>E-mail:</b> ${esc(u.email||'')}</p><p><b>Telefone:</b> ${esc(u.phone||'')}</p><p><b>Cidade:</b> ${esc(u.city||'')}</p><p><b>Categoria:</b> ${esc(u.service_category||'')}</p></div><div><p><b>Serviços:</b> ${esc(u.services||'Não informado')}</p><p><b>Experiência:</b> ${esc(u.experience||'Não informado')}</p><p><b>Área de atendimento:</b> ${esc(u.service_area||'Não informado')}</p><p><b>Assinatura até:</b> ${expiry}</p></div></div><div class="actions"><button class="btn btn-outline btn-small" onclick="renderAdmin()">Voltar ao painel</button>${u.id!==currentUser.id?(u.status==='suspended'?`<button class="btn btn-primary btn-small" onclick="adminSetStatus('${u.id}','active')">Reativar</button>`:`<button class="btn btn-danger btn-small" onclick="adminSetStatus('${u.id}','suspended')">Suspender</button><button class="btn btn-danger btn-small" onclick="adminBanUser('${u.id}')">🚫 Banir</button>`):''}${u.phone?`<a class="btn btn-outline btn-small" target="_blank" href="${wa('Olá, '+(u.full_name||'')+'. Aqui é do Conecta Serviços.')}">WhatsApp</a>`:''}</div></div>`;
+}
+async function adminSetStatus(id,status){
+ const u=adminUsersCache.find(x=>x.id===id);if(!u)return;
+ if(id===currentUser.id)return toast('Sua própria conta de administrador não pode ser suspensa.');
+ const action=status==='suspended'?'suspender':'reativar';
+ if(!confirm(`Deseja ${action} ${u.full_name||'este usuário'}?`))return;
+ const {error}=await db.from('profiles').update({status}).eq('id',id);
+ if(error)return toast(error.message);
+ toast(status==='suspended'?'Usuário suspenso.':'Usuário reativado.');
+ renderAdmin();
+}
+async function adminBanUser(id){
+ const u=adminUsersCache.find(x=>x.id===id);if(!u)return;
+ if(id===currentUser.id)return toast('Sua própria conta de administrador não pode ser banida.');
+ const password=prompt('Digite a senha de banimento:');
+ if(password===null)return;
+ if(password!==ADMIN_BAN_PASSWORD)return toast('Senha de banimento incorreta.');
+ if(!confirm(`BANIR ${u.full_name||'este usuário'}? O acesso será bloqueado e a assinatura será encerrada.`))return;
+ const {error}=await db.from('profiles').update({status:'suspended',subscription_until:null}).eq('id',id);
+ if(error)return toast(error.message);
+ toast('Usuário banido e acesso bloqueado.');
+ renderAdmin();
+}
+async function activateProfessional(id){
+ if(!confirm("Você confirmou o pagamento de R$ 4,99 e deseja liberar 30 dias?"))return;
+ const {data,error}=await db.rpc("admin_activate_professional",{professional_id:id,days:SUBSCRIPTION_DAYS});
+ if(error)return toast(error.message);toast("Profissional ativado até "+new Date(data).toLocaleDateString("pt-BR"));loadAdmin();
+}
+getSession();
+</script>
+</body>
+</html>
